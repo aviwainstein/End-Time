@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>טיימר וזמן ישראל עם זיקוקים</title>
+  <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
+
+  <!-- Flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      font-family: 'Digital-7 Mono', monospace;
+      color: red;
+    }
+
+    button {
+      font-size: 1.5em;
+      padding: 15px 30px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: linear-gradient(145deg, #ff0000, #990000);
+      color: white;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(255, 0, 0, 1);
+    }
+
+    #main-menu {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 3;
+    }
+
+    #main-menu h1 {
+      color: red;
+      font-size: 3em;
+      text-shadow: 0 0 15px red;
+    }
+
+    #stop-btn {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      z-index: 10;
+      padding: 10px 20px;
+      font-size: 1.2em;
+      background-color: red;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: none;
+    }
+
+    /* בחירת טיימר */
+    #form-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      text-align: center;
+      z-index: 2;
+      display: none;
+    }
+
+    #form-container label {
+      display: block;
+      font-size: 2em;
+      color: #ff5555;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px red;
+    }
+
+    input#endTime {
+      font-size: 1.5em;
+      padding: 10px;
+      border: 2px solid red;
+      border-radius: 10px;
+      background: black;
+      color: #ff6666;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+      width: 300px;
+    }
+
+    input#endTime:focus {
+      outline: none;
+      box-shadow: 0 0 25px rgba(255, 0, 0, 0.8);
+    }
+
+    /* Flatpickr עיצוב */
+    .flatpickr-calendar {
+      background: #111;
+      border: 1px solid #ff3333;
+      box-shadow: 0 0 25px rgba(255, 0, 0, 0.8);
+      color: red;
+      font-family: 'Digital-7 Mono', monospace;
+    }
+
+    .flatpickr-months {
+      background: #000;
+      border-bottom: 1px solid red;
+    }
+
+    .flatpickr-monthDropdown-months,
+    .numInputWrapper input {
+      background: black;
+      border: 1px solid red;
+      color: #ff6666;
+      font-family: 'Digital-7 Mono', monospace;
+      border-radius: 5px;
+    }
+
+    .flatpickr-day {
+      color: red;
+      border-radius: 6px;
+    }
+
+    .flatpickr-day:hover {
+      background: #ff0000;
+      color: black;
+    }
+
+    .flatpickr-day.selected {
+      background: red;
+      color: black;
+    }
+
+    .flatpickr-time input {
+      background: #000;
+      border: 1px solid red;
+      color: #ff6666;
+    }
+
+    /* תצוגת זמן */
+    #countdown, #clock-display {
+      font-size: 15vw;
+      transform: translate(-50%, -50%) scaleX(0.6) scaleY(1.4);
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 2;
+      display: none;
+      text-shadow: 0 0 30px rgba(255, 0, 0, 0.7);
+    }
+
+    #clock-date {
+      position: absolute;
+      top: calc(50% + 18vw);
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ff6666;
+      font-size: 4vw;
+      font-family: 'Digital-7 Mono', monospace;
+      z-index: 2;
+      display: none;
+      text-shadow: 0 0 15px red;
+    }
+
+    .blink {
+      animation: blink 1s steps(1) infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+<!-- תפריט ראשי -->
+<div id="main-menu">
+  <h1>ברוך הבא</h1>
+  <button onclick="openTimer()">⏱ הפעל טיימר</button><br>
+  <button onclick="openClock()">🕒 הצג שעון ישראל</button>
+</div>
+
+<!-- בחירת טיימר -->
+<div id="form-container">
+  <label for="endTime">בחר תאריך ושעת סיום:</label>
+  <input id="endTime" type="text" placeholder="בחר תאריך ושעה">
+  <br><br>
+  <button onclick="startCountdown()">🚀 התחל ספירה לאחור</button>
+</div>
+
+<!-- תצוגת טיימר -->
+<div id="countdown">
+  <span id="hours">00</span><span class="blink">:</span>
+  <span id="minutes">00</span><span class="blink">:</span>
+  <span id="seconds">00</span><span class="blink">:</span>
+  <span id="milliseconds">000</span>
+</div>
+
+<!-- תצוגת שעון -->
+<div id="clock-display"></div>
+<div id="clock-date"></div>
+
+<!-- כפתור חזרה -->
+<button id="stop-btn" onclick="returnToMain()">⬅ חזור למסך הראשי</button>
+
+<canvas id="fireworksCanvas"></canvas>
+
+<script>
+  let timer;
+  let clockInterval;
+  let fireworksRunning = false;
+
+  // 📅 לוח שנה עם בחירת חודש ושנה
+  flatpickr("#endTime", {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    time_24hr: true,
+    minDate: "today",
+    locale: "he",
+    monthSelectorType: "dropdown" // 👈 זה מאפשר לבחור חודש ושנה ישירות
+  });
+
+  function openTimer() {
+    document.getElementById("main-menu").style.display = "none";
+    document.getElementById("form-container").style.display = "block";
+    document.getElementById("stop-btn").style.display = "block";
+  }
+
+  function openClock() {
+    document.getElementById("main-menu").style.display = "none";
+    document.getElementById("clock-display").style.display = "block";
+    document.getElementById("clock-date").style.display = "block";
+    document.getElementById("stop-btn").style.display = "block";
+    startClock();
+  }
+
+  function returnToMain() {
+    clearInterval(timer);
+    clearInterval(clockInterval);
+    fireworksRunning = false;
+    document.getElementById("form-container").style.display = "none";
+    document.getElementById("countdown").style.display = "none";
+    document.getElementById("clock-display").style.display = "none";
+    document.getElementById("clock-date").style.display = "none";
+    document.getElementById("stop-btn").style.display = "none";
+    document.getElementById("main-menu").style.display = "block";
+  }
+
+  function startCountdown() {
+    const input = document.getElementById('endTime').value;
+    if (!input) {
+      alert("נא להזין תאריך ושעה");
+      return;
+    }
+
+    const endTime = new Date(input);
+    if (isNaN(endTime)) {
+      alert("פורמט שגוי של תאריך/שעה");
+      return;
+    }
+
+    document.getElementById("form-container").style.display = "none";
+    document.getElementById("countdown").style.display = "block";
+
+    timer = setInterval(() => updateCountdown(endTime), 50);
+  }
+
+  function updateCountdown(endTime) {
+    const now = new Date();
+    const diff = endTime - now;
+
+    if (diff <= 0) {
+      clearInterval(timer);
+      document.getElementById("hours").textContent = "00";
+      document.getElementById("minutes").textContent = "00";
+      document.getElementById("seconds").textContent = "00";
+      document.getElementById("milliseconds").textContent = "000";
+      launchFireworks(30000);
+      return;
+    }
+
+    const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
+    const minutes = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+    const seconds = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+    const milliseconds = String(diff % 1000).padStart(3, '0');
+
+    document.getElementById("hours").textContent = hours;
+    document.getElementById("minutes").textContent = minutes;
+    document.getElementById("seconds").textContent = seconds;
+    document.getElementById("milliseconds").textContent = milliseconds;
+  }
+
+  function startClock() {
+    updateClock();
+    clockInterval = setInterval(updateClock, 1000);
+  }
+
+  function updateClock() {
+    const now = new Date();
+    const options = { timeZone: 'Asia/Jerusalem', hour12: false };
+    const israelTime = new Date(now.toLocaleString("en-US", options));
+
+    const hours = String(israelTime.getHours()).padStart(2, '0');
+    const minutes = String(israelTime.getMinutes()).padStart(2, '0');
+    const seconds = String(israelTime.getSeconds()).padStart(2, '0');
+
+    document.getElementById("clock-display").innerHTML = `
+      <span>${hours}</span><span class="blink">:</span>
+      <span>${minutes}</span><span class="blink">:</span>
+      <span>${seconds}</span>
+    `;
+
+    const day = String(israelTime.getDate()).padStart(2, '0');
+    const month = String(israelTime.getMonth() + 1).padStart(2, '0');
+    const year = israelTime.getFullYear();
+    document.getElementById("clock-date").textContent = `${day}/${month}/${year}`;
+  }
+
+  // 🎆 זיקוקים
+  const canvas = document.getElementById('fireworksCanvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function createFirework(x, y) {
+    const colors = ['#ff0043', '#14fc56', '#1e90ff', '#ffff00', '#ff7f50'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    for (let i = 0; i < 50; i++) {
+      const angle = Math.random() * 2 * Math.PI;
+      const speed = Math.random() * 5 + 2;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color
+      });
+    }
+  }
+
+  function updateFireworks() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    particles.forEach((p, i) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= 0.015;
+      if (p.alpha <= 0) particles.splice(i, 1);
+    });
+
+    particles.forEach(p => {
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+
+    ctx.globalAlpha = 1.0;
+
+    if (fireworksRunning) {
+      requestAnimationFrame(updateFireworks);
+    }
+  }
+
+  function launchFireworks(duration) {
+    fireworksRunning = true;
+    const start = Date.now();
+
+    function loop() {
+      if (!fireworksRunning) return;
+      const now = Date.now();
+      if (now - start >= duration) {
+        fireworksRunning = false;
+        return;
+      }
+
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height * 0.5;
+      createFirework(x, y);
+      setTimeout(loop, 400 + Math.random() * 300);
+    }
+
+    loop();
+    updateFireworks();
+  }
+</script>
+
+</body>
+</html>
